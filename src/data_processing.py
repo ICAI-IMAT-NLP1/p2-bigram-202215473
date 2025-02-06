@@ -27,11 +27,22 @@ def load_and_preprocess_data(
         List[Tuple[str, str]]. A list of bigrams, where each bigram is a tuple of two characters.
     """
     with open(filepath, "r") as file:
-        lines: List[str] = file.read().splitlines()
+        lines: List[str] = file.read().splitlines()  # list of rows of the file
 
-    # TODO
-    bigrams: List[Tuple[str, str]] = None
-
+    bigrams: List[Tuple[str, str]] = []
+    for line in lines:
+        list_line: List[str] = line.lower().split()
+        # remove lasts 2 elements
+        list_line.pop()
+        list_line.pop()
+        list_new_line: List[str] = [start_token]
+        for word in list_line:
+            list_new_line += list(word)
+        list_new_line.append(end_token)
+        for i in range(len(list_new_line)-1):
+            bigram = (list_new_line[i], list_new_line[i+1])
+            bigrams.append(bigram)
+    print(bigrams[2])
     return bigrams
 
 
@@ -48,9 +59,15 @@ def char_to_index(alphabet: str, start_token: str, end_token: str) -> Dict[str, 
         Dict[str, int]: A dictionary mapping each character, including start and end tokens, to an index.
     """
     # Create a dictionary with start token at the beginning and end token at the end
-    # TODO
-    char_to_idx: Dict[str, int] = None
-
+    char_to_idx: Dict[str, int] = {}
+    char_to_idx[start_token] = 0
+    idx = 1
+    for char in alphabet:
+        char_to_idx[char] = idx
+        idx += 1
+    if idx in char_to_idx.keys():  # To avoid deleting the last character of the alphabet
+        idx += 1
+    char_to_idx[end_token] = idx
     return char_to_idx
 
 
@@ -65,9 +82,9 @@ def index_to_char(char_to_index: Dict[str, int]) -> Dict[int, str]:
         Dict[int, str]: A dictionary mapping each index back to its corresponding character.
     """
     # Reverse the char_to_index mapping
-    # TODO
-    idx_to_char: Dict[int, str] = None
-
+    idx_to_char: Dict[int, str] = {}
+    for char, idx in char_to_index.items():
+        idx_to_char[idx] = char
     return idx_to_char
 
 
@@ -90,14 +107,15 @@ def count_bigrams(
         torch.Tensor. A 2D tensor where each cell (i, j) represents the count of the bigram
         formed by the i-th and j-th characters in the alphabet.
     """
-
     # Initialize a 2D tensor for counting bigrams
-    # TODO
-    bigram_counts: torch.Tensor = None
-
+    bigram_counts: torch.Tensor = torch.zeros((len(char_to_idx), len(char_to_idx)), dtype=torch.int32)
     # Iterate over each bigram and update the count in the tensor
-    # TODO
-
+    for char1, char2 in bigrams:
+        try:
+            bigram_counts[char_to_idx[char1], char_to_idx[char2]] += 1
+        except KeyError:
+            # We are omitting those characters that are not in the alphabet
+            print(f"{char1} or {char2} not in the alphabet")
     return bigram_counts
 
 
@@ -150,3 +168,4 @@ if __name__ == "__main__":
 
     # Plot the bigram counts
     plot_bigram_counts(bigram_counts, idx_to_char)
+
